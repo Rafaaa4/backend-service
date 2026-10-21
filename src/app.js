@@ -22,6 +22,9 @@ import adminRoutes from './modules/admin/admin.routes.js';
 export const createApp = () => {
   const app = express();
 
+  // Trust proxy for Render / Cloudflare / reverse proxy deployments
+  app.set('trust proxy', 1);
+
   // Security Headers
   app.use(helmet({
     contentSecurityPolicy: false, // Flutter Web and SPA compatibility
