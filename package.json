@@ -1,0 +1,56 @@
+{
+  "name": "home-services-backend",
+  "version": "1.0.0",
+  "description": "Scalable & Secure Home Services Marketplace API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon --watch src src/server.js",
+    "seed": "node seed.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration --runInBand",
+    "test:concurrency": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/concurrency --runInBand"
+  },
+  "keywords": [
+    "home-services",
+    "marketplace",
+    "express",
+    "mongodb",
+    "redis",
+    "socketio"
+  ],
+  "author": "Antigravity Team",
+  "license": "ISC",
+  "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "argon2": "^0.41.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "otplib": "^12.0.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "rate-limit-redis": "^4.2.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.1.3",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "testTimeout": 30000
+  }
+}
