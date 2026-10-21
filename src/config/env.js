@@ -8,7 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   API_PREFIX: z.string().default('/api/v1'),
   CORS_ORIGIN: z.string().default('*'),
-  MONGODB_URI: z.string().default('mongodb://localhost:27017/homeservices?directConnection=true'),
+  MONGODB_URI: z.string().default('mongodb+srv://rafaaselmi6_db_user:rypqXl7hWIN5VPrM@cluster0.pviw3lv.mongodb.net/homeservices?retryWrites=true&w=majority'),
   REDIS_URL: z.string().optional().default('redis://localhost:6379'),
   JWT_ACCESS_SECRET: z.string().min(32).default('c8f8b398df98e21a3674d8120be876b0d91238475a91b2c3d4e5f60718293a4b'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
