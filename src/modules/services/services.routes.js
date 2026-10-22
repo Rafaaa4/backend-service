@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { Service } from './service.model.js';
+import { Booking } from '../bookings/booking.model.js';
 import { ProviderProfile } from '../providers/provider.model.js';
 import { authenticate } from '../../core/middlewares/auth.js';
 import { authorize } from '../../core/middlewares/authorize.js';
@@ -9,10 +10,11 @@ const router = Router();
 // Public: Get services by category or provider
 router.get('/', async (req, res, next) => {
   try {
-    const { categoryId, providerId } = req.query;
+    const { categoryId, providerId, priceType } = req.query;
     const filter = { isActive: true };
     if (categoryId) filter.categoryId = categoryId;
     if (providerId) filter.providerId = providerId;
+    if (priceType) filter.priceType = priceType;
 
     const services = await Service.find(filter)
       .populate('categoryId', 'name slug icon')
@@ -31,6 +33,52 @@ router.get('/me', authenticate, authorize('provider'), async (req, res, next) =>
       .populate('categoryId', 'name slug icon')
       .sort({ createdAt: -1 });
     res.json({ success: true, data: services });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Public: Get most demanded services ranked by real database bookings count & popularity
+router.get('/popular', async (req, res, next) => {
+  try {
+    // MongoDB Aggregation: calculate real booking counts per service
+    const popularAgg = await Booking.aggregate([
+      { $match: { status: { $nin: ['CANCELLED_BY_CLIENT', 'CANCELLED_BY_PROVIDER', 'PAYMENT_FAILED', 'REJECTED'] } } },
+      { $group: { _id: '$serviceId', bookingCount: { $sum: 1 } } },
+      { $sort: { bookingCount: -1 } },
+      { $limit: 12 }
+    ]);
+
+    const serviceIds = popularAgg.map(p => p._id).filter(Boolean);
+    let services = [];
+    if (serviceIds.length > 0) {
+      services = await Service.find({ _id: { $in: serviceIds }, isActive: true })
+        .populate('categoryId', 'name slug icon')
+        .populate('providerId', 'fullName avatarUrl phone businessName');
+    }
+
+    const countMap = new Map(popularAgg.map(p => [p._id?.toString(), p.bookingCount]));
+    let result = services.map(s => {
+      const obj = s.toObject();
+      obj.bookingCount = countMap.get(s._id.toString()) || 0;
+      return obj;
+    });
+
+    result.sort((a, b) => (b.bookingCount || 0) - (a.bookingCount || 0));
+
+    // If fewer than 8, backfill with other active services
+    if (result.length < 8) {
+      const excludeIds = result.map(s => s._id);
+      const backfill = await Service.find({ _id: { $nin: excludeIds }, isActive: true })
+        .populate('categoryId', 'name slug icon')
+        .populate('providerId', 'fullName avatarUrl phone businessName')
+        .limit(8 - result.length)
+        .sort({ createdAt: -1 });
+
+      result = [...result, ...backfill.map(b => ({ ...b.toObject(), bookingCount: 0 }))];
+    }
+
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }
