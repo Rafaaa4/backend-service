@@ -37,6 +37,15 @@ const serviceSchema = new mongoose.Schema({
     default: 60,
     min: 15
   },
+  imageUrl: {
+    type: String,
+    default: ''
+  },
+  providerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
   isActive: {
     type: Boolean,
     default: true,

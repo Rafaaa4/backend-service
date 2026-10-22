@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ProviderProfile } from './provider.model.js';
+import { User } from '../users/user.model.js';
 import { AvailabilityRule } from '../availability/availability.model.js';
 import { AvailabilityService } from '../availability/availability.service.js';
 import { authenticate } from '../../core/middlewares/auth.js';
@@ -86,6 +87,34 @@ router.get('/:id/availability', async (req, res, next) => {
   }
 });
 
+// Provider: Get own profile
+router.get('/me/profile', authenticate, authorize('provider'), async (req, res, next) => {
+  try {
+    const provider = await ProviderProfile.findOne({ userId: req.user._id })
+      .populate('userId', 'fullName avatarUrl phone email address')
+      .populate('categoryIds', 'name icon slug')
+      .populate('serviceIds', 'name basePrice priceType estimatedDurationMinutes imageUrl description');
+
+    if (!provider) {
+      // Create default if not found
+      const newProvider = await ProviderProfile.create({
+        userId: req.user._id,
+        businessName: req.user.fullName || 'Mon Entreprise',
+        bio: 'Prestataire de services qualifié',
+        hourlyRate: 35000,
+        verificationStatus: 'VERIFIED'
+      });
+      const populated = await ProviderProfile.findById(newProvider._id)
+        .populate('userId', 'fullName avatarUrl phone email address');
+      return res.json({ success: true, data: populated });
+    }
+
+    res.json({ success: true, data: provider });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Provider: Update own profile
 router.patch('/me/profile', authenticate, authorize('provider'), async (req, res, next) => {
   try {
@@ -95,11 +124,25 @@ router.patch('/me/profile', authenticate, authorize('provider'), async (req, res
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
 
+    // Also update User fields if provided
+    const userUpdates = {};
+    if (req.body.fullName) userUpdates.fullName = req.body.fullName;
+    if (req.body.phone) userUpdates.phone = req.body.phone;
+    if (req.body.avatarUrl) userUpdates.avatarUrl = req.body.avatarUrl;
+    if (req.body.address) userUpdates.address = req.body.address;
+
+    if (Object.keys(userUpdates).length > 0) {
+      await User.findByIdAndUpdate(req.user._id, { $set: userUpdates });
+    }
+
     const provider = await ProviderProfile.findOneAndUpdate(
       { userId: req.user._id },
       { $set: updates },
       { new: true, upsert: true }
-    );
+    )
+      .populate('userId', 'fullName avatarUrl phone email address')
+      .populate('categoryIds', 'name icon slug')
+      .populate('serviceIds', 'name basePrice priceType estimatedDurationMinutes imageUrl description');
 
     res.json({ success: true, data: provider });
   } catch (err) {

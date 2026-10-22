@@ -17,6 +17,7 @@ import bookingsRoutes from './modules/bookings/bookings.routes.js';
 import paymentsRoutes from './modules/payments/payments.routes.js';
 import chatRoutes from './modules/chat/chat.routes.js';
 import reviewsRoutes from './modules/reviews/reviews.routes.js';
+import notificationsRoutes from './modules/notifications/notifications.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 
 export const createApp = () => {
@@ -39,9 +40,9 @@ export const createApp = () => {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Idempotency-Key', 'x-signature', 'x-webhook-signature']
   }));
 
-  // Body Parsing with size limits
-  app.use(express.json({ limit: '100kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+  // Body Parsing with size limits (10mb to support secure base64 avatar and work photos)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Tracing & Rate Limiting
   app.use(requestIdMiddleware);
@@ -86,6 +87,7 @@ export const createApp = () => {
   api.use('/payments', paymentsRoutes);
   api.use('/conversations', chatRoutes);
   api.use('/reviews', reviewsRoutes);
+  api.use('/notifications', notificationsRoutes);
   api.use('/admin', adminRoutes);
 
   app.use(env.API_PREFIX, api);
