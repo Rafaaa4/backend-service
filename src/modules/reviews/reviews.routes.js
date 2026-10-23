@@ -7,7 +7,9 @@ import { validate } from '../../core/middlewares/validate.js';
 const router = Router();
 
 const createReviewSchema = z.object({
-  bookingId: z.string().min(1, 'bookingId is required'),
+  bookingId: z.string().optional(),
+  providerId: z.string().optional(),
+  serviceId: z.string().optional(),
   rating: z.number().int().min(1).max(5, 'Rating must be between 1 and 5'),
   comment: z.string().min(3, 'Comment must be at least 3 characters long').max(1000)
 }).strict();
@@ -27,7 +29,22 @@ router.get('/provider/:providerId', async (req, res, next) => {
   }
 });
 
-// Authenticated: Client submits review for completed booking
+// Public: Get reviews for a specific service
+router.get('/service/:serviceId', async (req, res, next) => {
+  try {
+    const { limit, page } = req.query;
+    const result = await ReviewsService.getServiceReviews(req.params.serviceId, {
+      limit: limit ? Number(limit) : 20,
+      page: page ? Number(page) : 1
+    });
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Authenticated: Client submits review for provider or service or booking
 router.post('/', authenticate, validate(createReviewSchema), async (req, res, next) => {
   try {
     const review = await ReviewsService.createReview({
@@ -42,3 +59,4 @@ router.post('/', authenticate, validate(createReviewSchema), async (req, res, ne
 });
 
 export default router;
+
